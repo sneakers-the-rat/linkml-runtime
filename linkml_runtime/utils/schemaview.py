@@ -1486,6 +1486,39 @@ class SchemaView(object):
         else:
             return False
 
+    def is_unset(self, element: Element, field: str) -> bool:
+        """
+        Determine if an element's property was unset in the original schema.
+
+        In most cases, unset fields in schema are semantically equivalent to the python ``None`` type,
+        but in some cases it is important to distinguish between the absense of the property altogether.
+
+        ie. this slot where ``array`` is implicitly ``None`` is a scalar integer:
+
+        .. code-block:: yaml
+
+            MyClass:
+              attributes:
+                my_slot:
+                  range: int
+
+        but this slot is an integer array of any shape:
+
+        .. code-block:: yaml
+
+            MyClass:
+              attributes:
+                my_slot:
+                  range: int
+                  array:
+
+        """
+        if field not in element._fields:
+            raise ValueError(f"{field} is not a field for {element.__class__.__name__} {element.name}")
+
+        return field in element._unset
+
+
     def slot_applicable_range_elements(self, slot: SlotDefinition) -> List[ClassDefinitionName]:
         """
         Returns all applicable metamodel elements for a slot range

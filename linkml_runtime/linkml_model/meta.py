@@ -363,6 +363,14 @@ class Element(YAMLRoot):
     categories: Optional[Union[Union[str, URIorCURIE], List[Union[str, URIorCURIE]]]] = empty_list()
     keywords: Optional[Union[str, List[str]]] = empty_list()
 
+    def __new__(cls, *args, **kwargs):
+        instance = super().__new__(cls, *args, **kwargs)
+        instance._fields = set(instance.__dataclass_fields__.keys())
+        instance._set = set(kwargs.keys())
+        instance._unset = instance._fields - instance._set
+        return instance
+
+
     def __post_init__(self, *_: List[str], **kwargs: Dict[str, Any]):
         if self._is_empty(self.name):
             self.MissingRequiredField("name")
