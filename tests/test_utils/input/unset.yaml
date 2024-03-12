@@ -1,0 +1,45 @@
+id: https://w3id.org/linkml/tests/unset
+name: unset
+description: |-
+  Schema to test differentiation between unset and implicitly None-valued parameters
+  
+  Unset properties are:
+  - SchemaDefinition: keywords
+  - ClassDefinition: keywords
+  - TypeDefinition: keywords
+  - SlotDefinition: array
+imports:
+  - linkml:types
+default_range: string
+keywords:
+
+classes:
+  TestClass:
+    name: TestClass
+    description: A class to test detecting unset properties
+    keywords:
+    slots:
+      - test_slot
+    attributes:
+      test_attribute:
+        name: test_attribute
+        range: integer
+        array:
+
+slots:
+  test_slot:
+    name: test_slot
+    range: float
+    array:
+
+types:
+  test_type:
+    name: 'test_type'
+    typeof: string
+    base: str
+    keywords:
+
+
+
+
+

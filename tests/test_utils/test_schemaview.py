@@ -19,6 +19,7 @@ SCHEMA_NO_IMPORTS = Path(INPUT_DIR) / 'kitchen_sink_noimports.yaml'
 SCHEMA_WITH_IMPORTS = Path(INPUT_DIR) / 'kitchen_sink.yaml'
 SCHEMA_WITH_STRUCTURED_PATTERNS = Path(INPUT_DIR) / "pattern-example.yaml"
 SCHEMA_IMPORT_TREE = Path(INPUT_DIR) / 'imports' / 'main.yaml'
+SCHEMA_UNSET = Path(INPUT_DIR) / 'unset.yaml'
 
 yaml_loader = YAMLLoader()
 IS_CURRENT = 'is current'
@@ -889,6 +890,56 @@ class SchemaViewTestCase(unittest.TestCase):
                 slot = sv.get_slot(slot_name)
                 actual_result = sv.is_inlined(slot)
                 self.assertEqual(actual_result, expected_result)
+
+    def test_is_unset(self):
+        """
+        Values that are "unset" vs. explicitly ``None`` should be differentiable
+
+        eg. this should be differentiable from having ``array`` unset:
+
+        .. code-block:: yaml
+
+            my_slot:
+              range: integer
+              array:
+
+        """
+        sv = SchemaView(SCHEMA_UNSET)
+        cases = {
+            'slot': {
+                'def': sv.get_slot('test_slot'),
+                'props': ['array']
+            },
+            'attribute': {
+                'def': sv.induced_slot('test_attribute', 'TestClass'),
+                'props': ['array']},
+            'class': {
+                'def': sv.get_class('TestClass'),
+                'props': ['keywords']
+            },
+            'schema': {
+                'def': sv.schema,
+                'props': ['keywords']
+            },
+            'type': {
+                'def': sv.get_type('test_type'),
+                'props': ['keywords']
+            }
+        }
+        for item_type, item in cases.items():
+            definition = item['def']
+            for prop in item['props']:
+                assert not sv.is_unset(definition, prop)
+                # default should be falsy still
+                assert not getattr(definition, prop)
+                assert definition._fields == set(definition.__dataclass_fields__.keys())
+                assert prop not in definition._unset
+
+            assert sv.is_unset(definition, 'title')
+            assert 'title' in definition._unset
+            assert 'name' not in definition._unset
+
+
 
 
 if __name__ == '__main__':

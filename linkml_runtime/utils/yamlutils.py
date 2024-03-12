@@ -28,6 +28,25 @@ class YAMLRoot(JsonObj):
     """
     The root object for all python YAML representations
     """
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Before item instantiation, if we are a dataclass, store the fields that
+        are set vs. unset in the source YAML representation.
+
+        Used in: :meth:`linkml_runtime.utils.schemaview.SchemaView.is_unset`
+        """
+        instance = super().__new__(cls, *args, **kwargs)
+        if hasattr(instance, '__dataclass_fields__'):
+            instance._fields = set(instance.__dataclass_fields__.keys())
+            instance._set = set(kwargs.keys())
+            instance._unset = instance._fields - instance._set
+        else:
+            instance._fields = None
+            instance._set = None
+            instance._unset = None
+        return instance
+
     def __init__(self, *args, **kwargs):
         """
         Override dataclass initializer
