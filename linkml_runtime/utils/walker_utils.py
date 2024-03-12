@@ -5,7 +5,7 @@ Utilities for walking object trees
 from copy import deepcopy
 from typing import Callable, Union, List, Dict, Any
 
-from linkml_runtime.utils.yamlutils import YAMLRoot
+from linkml_runtime.utils.yamlutils import YAMLRoot, PRIVATE_ATTRS
 
 
 def traverse_object_tree(obj: YAMLRoot, func: Callable, mutate: bool = True) -> Any:
@@ -31,8 +31,8 @@ def _traverse_object_tree_1(obj: Union[YAMLRoot, List, Dict], func: Callable,
         if not mutate:
             # make a copy, this copy is intentionally mutated from here
             obj = deepcopy(obj)
-        for v in vars(obj).values():
-            if v is not None:
+        for k, v in vars(obj).items():
+            if v is not None and k not in PRIVATE_ATTRS:
                 _traverse_object_tree_1(v, func, True)
         obj = func(obj)
         return obj

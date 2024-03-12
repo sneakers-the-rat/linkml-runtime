@@ -9,7 +9,7 @@ from linkml_runtime.linkml_model import SlotDefinitionName, PermissibleValue, Cl
 from linkml_runtime.utils.enumerations import EnumDefinitionImpl
 from linkml_runtime.utils.eval_utils import eval_expr
 from linkml_runtime.utils.walker_utils import traverse_object_tree
-from linkml_runtime.utils.yamlutils import YAMLRoot
+from linkml_runtime.utils.yamlutils import YAMLRoot, PRIVATE_ATTRS
 
 RESOLVE_FUNC = Callable[[str, Any], Any]
 
@@ -141,6 +141,8 @@ def infer_all_slot_values(obj: YAMLRoot, schemaview: SchemaView,
         logging.debug(f'INFER={in_obj}')
         if isinstance(in_obj, YAMLRoot) and not isinstance(in_obj, EnumDefinitionImpl) and not isinstance(in_obj, PermissibleValue):
             for k, v in vars(in_obj).items():
+                if k in PRIVATE_ATTRS:
+                    continue
                 #print(f'  ISV={k} curr={v} policy={policy} in_obj={type(in_obj)}')
                 infer_slot_value(in_obj, k, schemaview, class_name=class_name, policy=policy, config=config)
         return in_obj

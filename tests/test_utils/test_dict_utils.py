@@ -10,8 +10,9 @@ from tests.test_utils.environment import env
 
 def _signature(d):
     if isinstance(d, dict):
-        for x in d.values():
-            yield x
+        for k, x in d.items():
+            if k not in yutils.PRIVATE_ATTRS:
+                yield x
     elif isinstance(d, list):
         for x in d:
             yield x
@@ -20,7 +21,7 @@ def _signature(d):
 
 def _is_python_type(obj):
     t = type(obj)
-    return t in [dict, list, str, int, float, type(None)] or isinstance(obj, ElementName)
+    return t in [dict, list, str, int, float, type(None), set] or isinstance(obj, ElementName)
 
 def _is_basic_type(obj):
     return _is_python_type(obj) or isinstance(obj, ElementName)

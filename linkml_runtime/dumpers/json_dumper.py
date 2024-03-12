@@ -8,7 +8,7 @@ from deprecated.classic import deprecated
 from linkml_runtime.dumpers.dumper_root import Dumper
 from linkml_runtime.utils import formatutils
 from linkml_runtime.utils.context_utils import CONTEXTS_PARAM_TYPE
-from linkml_runtime.utils.formatutils import remove_empty_items
+from linkml_runtime.utils.formatutils import remove_empty_items, remove_private_items
 from linkml_runtime.utils.yamlutils import YAMLRoot, as_json_object
 from jsonasobj2 import JsonObj
 
@@ -60,6 +60,11 @@ class JSONDumper(Dumper):
                 return json.JSONDecoder().decode(o)
         if isinstance(element, BaseModel):
             element = element.dict()
+
+        element = remove_empty_items(element)
+        element = remove_private_items(element)
+        element = remove_empty_items(element)
+
         return json.dumps(as_json_object(element, contexts, inject_type=inject_type),
                           default=default,
                           ensure_ascii=False,

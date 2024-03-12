@@ -14,7 +14,7 @@ from typing import Mapping, Any, Optional, Tuple, List, Iterator, Union
 
 from linkml_runtime import SchemaView
 from linkml_runtime.utils import eval_utils
-from linkml_runtime.utils.yamlutils import YAMLRoot
+from linkml_runtime.utils.yamlutils import YAMLRoot, PRIVATE_ATTRS
 
 
 class ObjectIndex:
@@ -210,7 +210,7 @@ class ProxyObject:
 
     def __getattribute__(self, attribute):
         if attribute == '__dict__':
-            return {k: getattr(self, k, None) for k in vars(self._shadowed).keys()}
+            return {k: getattr(self, k, None) for k in self._attributes()}
         else:
             return object.__getattribute__(self, attribute)
 
@@ -264,5 +264,5 @@ class ProxyObject:
         return obj
 
     def _attributes(self) -> List[str]:
-        return list(vars(self._shadowed).keys())
+        return [v for v in vars(self._shadowed).keys() if v not in PRIVATE_ATTRS]
 

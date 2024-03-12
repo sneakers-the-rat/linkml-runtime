@@ -14,6 +14,7 @@ from linkml_runtime.utils.formatutils import is_empty
 
 YAMLObjTypes = Union[JsonObjTypes, "YAMLRoot"]
 
+PRIVATE_ATTRS = ('_fields', '_set', '_unset')
 
 class YAMLMark(yaml.error.Mark):
     def __str__(self):
@@ -36,6 +37,8 @@ class YAMLRoot(JsonObj):
 
         Used in: :meth:`linkml_runtime.utils.schemaview.SchemaView.is_unset`
         """
+        kwargs = {k:v for k,v in kwargs.items() if k not in PRIVATE_ATTRS}
+
         instance = super().__new__(cls, *args, **kwargs)
         if hasattr(instance, '__dataclass_fields__'):
             instance._fields = set(instance.__dataclass_fields__.keys())
@@ -62,9 +65,12 @@ class YAMLRoot(JsonObj):
                 v = repr(v)[:40].replace('\n', '\\n')
                 messages.append(f"Unknown positional argument: {v}")
             for k in kwargs.keys():
+                if k in PRIVATE_ATTRS:
+                    continue
                 v = repr(kwargs[k])[:40].replace('\n', '\\n')
                 messages.append(f"{TypedNode.yaml_loc(k)} Unknown argument: {k} = {v}")
-            raise ValueError('\n'.join(messages))
+            if len(messages) > 0:
+                raise ValueError('\n'.join(messages))
 
     def _default(self, obj, filtr: Callable[[dict], dict] = None):
         """ JSON serializer callback.
@@ -306,6 +312,8 @@ def root_representer(dumper: yaml.Dumper, data: YAMLRoot):
         data = data.code
     rval = dict()
     for k, v in data.__dict__.items():
+        if k in PRIVATE_ATTRS:
+            continue
         if not k.startswith('_') and v is not None and (not isinstance(v, (dict, list)) or v):
             rval[k] = v
     return dumper.represent_data(rval)

@@ -185,3 +185,11 @@ def remove_empty_items(obj: Any, hide_protected_keys: bool = False, inside: bool
             return int(obj)
     else:
         return obj
+
+def remove_private_items(obj: Any):
+    if is_list(obj):
+        return [remove_private_items(e) for e in obj]
+    elif is_dict(obj):
+        return {k:remove_private_items(v) for k,v in items(obj) if not k.startswith('_')}
+    else:
+        return obj
