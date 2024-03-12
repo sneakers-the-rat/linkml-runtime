@@ -33,4 +33,4 @@ class JSONLoader(Loader):
             if typ and typ != target_class.__name__:
                 logging.warning(f"Warning: input type mismatch. Expected: {target_class.__name__}, Actual: {typ}")
 
-        return self._construct_target_class(data_as_dict, target_class)
+        return self._construct_target_class(data_as_dict, target_class, **_)

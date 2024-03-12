@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import TextIO, Union, Optional, Callable, Dict, Type, Any, List
+from typing import TextIO, Union, Optional, Callable, Dict, Type, Any, List, TYPE_CHECKING
 
 from pydantic import BaseModel
 from hbreader import FileInfo, hbread
 from jsonasobj2 import as_dict, JsonObj
 
 from linkml_runtime.utils.yamlutils import YAMLRoot
+if TYPE_CHECKING:
+    from linkml_runtime.utils.schemaview import SchemaView
 
 
 class Loader(ABC):
@@ -57,7 +59,7 @@ class Loader(ABC):
         return self._construct_target_class(data_as_dict, target_class=target_class)
 
 
-    def load(self, *args, **kwargs) -> Union[BaseModel, YAMLRoot]:
+    def load(self, *args, **kwargs) -> Union[BaseModel, YAMLRoot, List[BaseModel], List[YAMLRoot]]:
         """
         Load source as an instance of target_class
 
@@ -69,7 +71,7 @@ class Loader(ABC):
         :return: instance of target_class
         """
         results = self.load_any(*args, **kwargs)
-        if isinstance(results, BaseModel) or isinstance(results, YAMLRoot):
+        if isinstance(results, (BaseModel, YAMLRoot)) or (isinstance(results, list) and all([isinstance(r, (BaseModel, YAMLRoot)) for r in results])):
             return results
         else:
             raise ValueError(f'Result is not an instance of BaseModel or YAMLRoot: {type(results)}')
@@ -116,7 +118,8 @@ class Loader(ABC):
 
     def _construct_target_class(self, 
                                 data_as_dict: Union[dict, List[dict]],
-                                target_class: Union[Type[YAMLRoot], Type[BaseModel]]) -> Optional[Union[BaseModel, YAMLRoot, List[BaseModel], List[YAMLRoot]]]:
+                                target_class: Union[Type[YAMLRoot], Type[BaseModel]],
+                                **kwargs) -> Optional[Union[BaseModel, YAMLRoot, List[BaseModel], List[YAMLRoot]]]:
         if data_as_dict:
             if isinstance(data_as_dict, list):
                if issubclass(target_class, YAMLRoot):
@@ -126,10 +129,26 @@ class Loader(ABC):
                else:
                    raise ValueError(f'Cannot load list of {target_class}')
             elif isinstance(data_as_dict, dict):
-                if issubclass(target_class, BaseModel):
-                    return target_class.parse_obj(data_as_dict)
-                else:
-                    return target_class(**data_as_dict)
+                try:
+                    if issubclass(target_class, BaseModel):
+                        return target_class.parse_obj(data_as_dict)
+                    else:
+                        return target_class(**data_as_dict)
+                except Exception as e:
+                    # try and instantiate as dict with keys as identifiers
+                    if 'schemaview' in kwargs:
+                        sv = kwargs['schemaview']  # type: SchemaView
+                        identifier = sv.get_identifier_slot(target_class.__name__)
+                        if identifier is None:
+                            raise e
+                        res = []
+                        for key, val in data_as_dict.items():
+                            val[identifier.name] = key
+                            res.append(target_class(**val))
+                        return res
+                    else:
+                        raise e
+
             elif isinstance(data_as_dict, JsonObj):
                 return [target_class(**as_dict(x)) for x in data_as_dict]
             else:

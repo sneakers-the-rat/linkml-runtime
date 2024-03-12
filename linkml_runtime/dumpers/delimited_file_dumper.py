@@ -29,8 +29,11 @@ class DelimitedFileDumper(Dumper, ABC):
               **kwargs) -> str:
         """ Return element formatted as CSV lines """
         json_dumper = JSONDumper()
-        element_j = json.loads(json_dumper.dumps(element))
-        objs = element_j[index_slot]
+        if isinstance(element, list):
+            objs = [json.loads(json_dumper.dumps(e)) for e in element]
+        else:
+            element_j = json.loads(json_dumper.dumps(element))
+            objs = element_j[index_slot]
         if schemaview is None:
             schemaview = SchemaView(schema)
         configmap = get_configmap(schemaview, index_slot)

@@ -39,7 +39,7 @@ class YAMLLoader(Loader):
                  *, base_dir: Optional[str] = None,
                  metadata: Optional[FileInfo] = None, **_) -> Union[YAMLRoot, List[YAMLRoot]]:
         data_as_dict = self.load_as_dict(source, base_dir=base_dir, metadata=metadata)
-        return self._construct_target_class(data_as_dict, target_class)
+        return self._construct_target_class(data_as_dict, target_class, **_)
 
     def loads_any(self, source: str, target_class: Type[Union[BaseModel, YAMLRoot]], *, metadata: Optional[FileInfo] = None, **_) -> Union[BaseModel, YAMLRoot, List[BaseModel], List[YAMLRoot]]:
         """
