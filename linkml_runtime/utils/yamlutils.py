@@ -29,7 +29,7 @@ class YAMLMark(yaml.error.Mark):
             where += ":\n"+snippet
         return where
 
-class YAMLRoot(JsonObj):
+class YAMLRoot():
     """
     The root object for all python YAML representations
     """
@@ -51,6 +51,15 @@ class YAMLRoot(JsonObj):
                 v = repr(kwargs[k])[:40].replace('\n', '\\n')
                 messages.append(f"{TypedNode.yaml_loc(k)} Unknown argument: {k} = {v}")
             raise ValueError('\n'.join(messages))
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __contains__(self, item):
+        return item in self.__dict__
 
     def _default(self, obj, filtr: Callable[[dict], dict] = None):
         """ JSON serializer callback.
@@ -118,7 +127,7 @@ class YAMLRoot(JsonObj):
         @param keyed: True means each identifier must be unique
         @param is_list: True means inlined as list
         """
-        raw_slot: Union[list, dict, JsonObj] = self[slot_name]
+        raw_slot: Union[list, dict, JsonObj] = getattr(self, slot_name)
         if raw_slot is None:
             raw_slot = []
         elif not isinstance(raw_slot, (dict, list, JsonObj)):
@@ -128,7 +137,7 @@ class YAMLRoot(JsonObj):
 
         def order_up(key: Any, cooked_entry: YAMLRoot) -> None:
             """ A cooked entry is ready to be added to the return slot """
-            if cooked_entry[key_name] != key:
+            if getattr(cooked_entry, key_name) != key:
                 raise ValueError(
                     f"Slot: {loc(slot_name)} - attribute {loc(key_name)} " \
                     f"value ({loc(cooked_entry[key_name])}) does not match key ({loc(key)})")
@@ -167,7 +176,7 @@ class YAMLRoot(JsonObj):
             # We have a list of entries
             for list_entry in raw_slot:
                 if isinstance(list_entry, slot_type):
-                    order_up(list_entry[key_name], list_entry)
+                    order_up(getattr(list_entry, key_name), list_entry)
                 elif isinstance(list_entry, (dict, JsonObj)):
                     # list_entry is either a key:dict, key_name:value or **kwargs
                     if len(list_entry) == 1:

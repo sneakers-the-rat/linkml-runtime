@@ -1,4 +1,5 @@
 import json
+from dataclasses import asdict
 from decimal import Decimal
 from typing import Dict, Union
 from pydantic import BaseModel
@@ -60,6 +61,8 @@ class JSONDumper(Dumper):
                 return json.JSONDecoder().decode(o)
         if isinstance(element, BaseModel):
             element = element.dict()
+        else:
+            element = asdict(element)
         return json.dumps(as_json_object(element, contexts, inject_type=inject_type),
                           default=default,
                           ensure_ascii=False,
